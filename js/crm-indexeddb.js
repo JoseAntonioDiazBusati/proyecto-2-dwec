@@ -74,7 +74,7 @@ form.addEventListener('submit', e => {
     const name = form.name.value.trim(); 
     const email = form.email.value.trim(); 
     const phone = form.phone.value.trim(); 
-    
+
     if (!validateField(form.name) || !validateField(form.email) || !validateField(form.phone)) { alert('Por favor corrige los campos inválidos antes de continuar.'); return; } 
         const transaction = db.transaction(['clients'], 'readwrite'); 
         const store = transaction.objectStore('clients'); 
@@ -91,6 +91,16 @@ form.addEventListener('submit', e => {
 // TODO: Implementar función para mostrar clientes guardados en IndexedDB
 function fetchClients() {
     // Código eliminado para que alumnos implementen mecanismo de lectura
+    const clientList = document.getElementById('client-list');
+    clientList.innerHTML = ''; const transaction = db.transaction(['clients'], 'readonly');
+    const store = transaction.objectStore('clients'); const request = store.openCursor();
+    request.onsuccess = (event) => { 
+        const cursor = event.target.result;
+        if (cursor) { const { id, name, email, phone } = cursor.value; 
+            const li = document.createElement('li');
+            li.innerHTML = '<span><strong>${name}</strong> - ${email} - ${phone}</span><div class="actions"> <button onclick="editClient(${id})">Editar</button><button onclick="deleteClient(${id})">Eliminar</button></div>';
+            clientList.appendChild(li); cursor.continue(); }
+            else if (!clientList.hasChildNodes()) { clientList.innerHTML = '<li>No hay clientes registrados.</li>'; } };
 }
 
 // --- EDITAR CLIENTE ---
@@ -101,5 +111,11 @@ window.editClient = function(id) {
 // --- ELIMINAR CLIENTE ---
 window.deleteClient = function(id) {
     // Código eliminado para implementación del alumno
+    if (confirm('¿Seguro que deseas eliminar este cliente?')) {
+        const transaction = db.transaction(['clients'], 'readwrite');
+        const store = transaction.objectStore('clients');
+        store.delete(id);
+        transaction.oncomplete = fetchClients; 
+    }  
 };
 
