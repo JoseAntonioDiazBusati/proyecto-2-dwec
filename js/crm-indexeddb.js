@@ -30,13 +30,36 @@ const form = document.getElementById('client-form');
 const addBtn = document.getElementById('add-btn');
 const inputs = form.querySelectorAll('input');
 
+const patterns = {
+  name: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,40}$/,
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, 
+  phone: /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/  
+};
+
 // --- Validaciones y activación botón ---
 // Dejar el botón siempre deshabilitado. Que alumnos lo activen cuando validen campos
 // addBtn.disabled = true; 
 
+function validateField(input) {
+  const pattern = patterns[input.name];
+  if (pattern && pattern.test(input.value.trim())) {
+    input.classList.add('valid');
+    input.classList.remove('invalid');
+    return true;
+  } else {
+    input.classList.add('invalid');
+    input.classList.remove('valid');
+    return false;
+  }
+}
+
 inputs.forEach(input => {
     // Quitar manejo de eventos 'blur' para validación (alumnos deben hacerlo)
     // input.addEventListener('blur', e => { ... });
+    input.addEventListener('blur', () => {
+    validateField(input);
+    checkFormValidity();
+  });
 });
 
 // --- AGREGAR CLIENTE ---
