@@ -57,31 +57,41 @@ inputs.forEach(input => {
     // Quitar manejo de eventos 'blur' para validación (alumnos deben hacerlo)
     // input.addEventListener('blur', e => { ... });
     input.addEventListener('blur', () => {
-    validateField(input);
-    checkFormValidity();
+    validar(input);
+    comprobarValidacion();
   });
 });
 
 function comprobarValidacion() {
-  const allValid = Array.from(inputs).every(input => validateField(input));
-  addBtn.disabled = !allValid;
+    const allValid = Array.from(inputs).every(input => validar(input));
+    addBtn.disabled = !allValid;
+    return allValid;
 }
 
 // --- AGREGAR CLIENTE ---
 // TODO: Implementar la función que capture los datos y los agregue a IndexedDB
 form.addEventListener('submit', e => {
     e.preventDefault();
-    const name = form.name.value.trim(); 
-    const email = form.email.value.trim(); 
-    const phone = form.phone.value.trim(); 
+    const name = form.name.value.trim();
+    const email = form.email.value.trim();
+    const phone = form.phone.value.trim();
 
-    if (!validateField(form.name) || !validateField(form.email) || !validateField(form.phone)) { alert('Por favor corrige los campos inválidos antes de continuar.'); return; } 
+    const validName = validar(form.name);
+    const validEmail = validar(form.email);
+    const validPhone = validar(form.phone);
+
+    if (!validName || !validEmail || !validPhone) { alert('Por favor corrige los campos inválidos antes de continuar.'); return; }
         const transaction = db.transaction(['clients'], 'readwrite'); 
         const store = transaction.objectStore('clients'); 
         const newClient = { name, email, phone }; 
-        const requestAdd = store.add(newClient); 
-        requestAdd.onsuccess = () => { form.reset(); inputs.forEach(i => i.classList.remove('valid')); addBtn.disabled = true; fetchClients(); }; 
-        requestAdd.onerror = (e) => { 
+        const requestAdd = store.add(newClient);
+        requestAdd.onsuccess = () => {
+            form.reset();
+            inputs.forEach(i => i.classList.remove('valid'));
+            addBtn.disabled = true;
+            fetchClients();
+        };
+        requestAdd.onerror = (e) => {
             alert("Error al agregar cliente (¿Email duplicado?)"); 
             console.error(e);
         }; 
