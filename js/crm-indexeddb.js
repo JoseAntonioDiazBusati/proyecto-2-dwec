@@ -63,7 +63,9 @@ inputs.forEach(input => {
 });
 
 function comprobarValidacion() {
-    const allValid = Array.from(inputs).every(input => validar(input));
+    const allValid = Array.from(inputs).every(input =>
+        patterns[input.name].test(input.value.trim())
+    );
     addBtn.disabled = !allValid;
     return allValid;
 }
@@ -111,10 +113,12 @@ function fetchClients() {
         if (cursor) {
             const { id, name, email, phone } = cursor.value;
             const li = document.createElement('li');
-            li.innerHTML =
-                '<span><strong>${name}</strong> - ${email} - ${phone}</span>' +
-                '<div class="actions">' +
-                '<button onclick="editClient(${id})">Editar</button><button onclick="deleteClient(${id})">Eliminar</button></div>';
+            li.innerHTML =`
+            <span><strong>${name}</strong> - ${email} - ${phone}</span>
+            <div class="actions">
+               <button onclick="editClient(${id})">Editar</button>
+                <button onclick="deleteClient(${id})">Eliminar</button>
+            </div>`;
             clientList.appendChild(li); cursor.continue(); }
             else if (!clientList.hasChildNodes()) { clientList.innerHTML = '<li>No hay clientes registrados.</li>'; } };
 }
@@ -147,7 +151,10 @@ window.deleteClient = function(id) {
         const transaction = db.transaction(['clients'], 'readwrite');
         const store = transaction.objectStore('clients');
         store.delete(id);
-        transaction.oncomplete = fetchClients; 
-    }  
+        transaction.oncomplete = () => {
+            fetchClients();
+        };
+        transaction.onerror = (e) => console.error('Error al eliminar:', e);
+    }
 };
 
