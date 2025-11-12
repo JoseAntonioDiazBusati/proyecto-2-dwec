@@ -2,26 +2,26 @@ let db;
 
 // Abrir base de datos IndexedDB y crear object store si es necesario
 // --- ELIMINADO para que alumnos implementen ---
-// const request = indexedDB.open("CRM_Database", 1);
+const request = indexedDB.open("CRM_Database", 1);
 
-// request.onerror = function(event) {
-//     console.error("Error abriendo IndexedDB", event);
-// };
+request.onerror = function(event) {
+    console.error("Error abriendo IndexedDB", event);
+};
 
-// request.onsuccess = function(event) {
-//     db = event.target.result;
-//     fetchClients(); // Cargar clientes almacenados
-// };
+request.onsuccess = function(event) {
+    db = event.target.result;
+    fetchClients();  // Cargar clientes almacenados
+};
 
-// request.onupgradeneeded = function(event) {
-//     db = event.target.result;
-//     if(!db.objectStoreNames.contains('clients')) {
-//         const objectStore = db.createObjectStore('clients', { keyPath: 'id', autoIncrement: true });
-//         objectStore.createIndex('name', 'name', { unique: false });
-//         objectStore.createIndex('email', 'email', { unique: true });
-//         objectStore.createIndex('phone', 'phone', { unique: false });
-//     }
-// };
+request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    if(!db.objectStoreNames.contains('clients')) {
+        const objectStore = db.createObjectStore('clients', { keyPath: 'id', autoIncrement: true });
+        objectStore.createIndex('name', 'name', { unique: false });
+        objectStore.createIndex('email', 'email', { unique: true });
+        objectStore.createIndex('phone', 'phone', { unique: false });
+     }
+};
 
 // --- VALIDACIONES ---
 // TODO: Implementad validaciones usando expresiones regulares y eventos 'onblur'
@@ -102,13 +102,19 @@ form.addEventListener('submit', e => {
 function fetchClients() {
     // Código eliminado para que alumnos implementen mecanismo de lectura
     const clientList = document.getElementById('client-list');
-    clientList.innerHTML = ''; const transaction = db.transaction(['clients'], 'readonly');
-    const store = transaction.objectStore('clients'); const request = store.openCursor();
-    request.onsuccess = (event) => { 
+    clientList.innerHTML = '';
+    const transaction = db.transaction(['clients'], 'readonly');
+    const store = transaction.objectStore('clients');
+    const request = store.openCursor();
+    request.onsuccess = (event) => {
         const cursor = event.target.result;
-        if (cursor) { const { id, name, email, phone } = cursor.value; 
+        if (cursor) {
+            const { id, name, email, phone } = cursor.value;
             const li = document.createElement('li');
-            li.innerHTML = '<span><strong>${name}</strong> - ${email} - ${phone}</span><div class="actions"> <button onclick="editClient(${id})">Editar</button><button onclick="deleteClient(${id})">Eliminar</button></div>';
+            li.innerHTML =
+                '<span><strong>${name}</strong> - ${email} - ${phone}</span>' +
+                '<div class="actions">' +
+                '<button onclick="editClient(${id})">Editar</button><button onclick="deleteClient(${id})">Eliminar</button></div>';
             clientList.appendChild(li); cursor.continue(); }
             else if (!clientList.hasChildNodes()) { clientList.innerHTML = '<li>No hay clientes registrados.</li>'; } };
 }
@@ -116,6 +122,22 @@ function fetchClients() {
 // --- EDITAR CLIENTE ---
 window.editClient = function(id) {
     // Código eliminado para implementación del alumno
+    const transaction = db.transaction(['clients'], 'readonly');
+    const store = transaction.objectStore('clients');
+    const request = store.get(id);
+
+    request.onsuccess = (event) => {
+        const client = event.target.result;
+        if (client) {
+            form.name.value = client.name;
+            form.email.value = client.email;
+            form.phone.value = client.phone;
+            editId = client.id;
+            addBtn.textContent = 'Guardar Cambios';
+            addBtn.disabled = false;
+            inputs.forEach(i => validar(i));
+        }
+    };
 };
 
 // --- ELIMINAR CLIENTE ---
