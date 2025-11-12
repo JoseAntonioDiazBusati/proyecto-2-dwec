@@ -1,5 +1,5 @@
 let db;
-
+let editId = null;
 // Abrir base de datos IndexedDB y crear object store si es necesario
 // --- ELIMINADO para que alumnos implementen ---
 const request = indexedDB.open("CRM_Database", 1);
@@ -10,7 +10,7 @@ request.onerror = function(event) {
 
 request.onsuccess = function(event) {
     db = event.target.result;
-    fetchClients();  // Cargar clientes almacenados
+    fetchClients();
 };
 
 request.onupgradeneeded = function(event) {
@@ -74,18 +74,36 @@ function comprobarValidacion() {
 // TODO: Implementar la función que capture los datos y los agregue a IndexedDB
 form.addEventListener('submit', e => {
     e.preventDefault();
+
     const name = form.name.value.trim();
     const email = form.email.value.trim();
     const phone = form.phone.value.trim();
 
-    const validName = validar(form.name);
-    const validEmail = validar(form.email);
-    const validPhone = validar(form.phone);
+    if (!validar(form.name) || !validar(form.email) || !validar(form.phone)) {
+        alert('Por favor corrige los campos inválidos antes de continuar.');
+        return;
+    }
 
-    if (!validName || !validEmail || !validPhone) { alert('Por favor corrige los campos inválidos antes de continuar.'); return; }
-        const transaction = db.transaction(['clients'], 'readwrite'); 
-        const store = transaction.objectStore('clients'); 
-        const newClient = { name, email, phone }; 
+    const transaction = db.transaction(['clients'], 'readwrite');
+    const store = transaction.objectStore('clients');
+
+    if (editId) {
+        const updatedClient = { id: editId, name, email, phone };
+        const requestUpdate = store.put(updatedClient); // ⚠️ guardar la request
+        requestUpdate.onsuccess = () => {
+            editId = null;
+            addBtn.textContent = 'Agregar Cliente';
+            form.reset();
+            inputs.forEach(i => i.classList.remove('valid'));
+            addBtn.disabled = true;
+            fetchClients();
+        };
+        requestUpdate.onerror = (e) => {
+            alert("Error al actualizar cliente (¿Email duplicado?)");
+            console.error(e);
+        };
+    } else {
+        const newClient = { name, email, phone };
         const requestAdd = store.add(newClient);
         requestAdd.onsuccess = () => {
             form.reset();
@@ -94,9 +112,10 @@ form.addEventListener('submit', e => {
             fetchClients();
         };
         requestAdd.onerror = (e) => {
-            alert("Error al agregar cliente (¿Email duplicado?)"); 
+            alert("Error al agregar cliente (¿Email duplicado?)");
             console.error(e);
-        }; 
+        };
+    }
 });
 
 // --- LISTADO DINÁMICO ---
